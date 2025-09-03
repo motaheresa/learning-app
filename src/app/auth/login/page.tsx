@@ -17,7 +17,7 @@ export default function LoginPage() {
     const res = await loginAction(formData);
 
     if (res.success) {
-      if(res.role=="student"){
+      if(res.role=="ADMIN"){
         router.push("/admin/dashboard");
       }else{
         router.push("/user/dashboard")
