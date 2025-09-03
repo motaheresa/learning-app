@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Class {
+  id        Int      @id @default(autoincrement())
+  name      String
+  users     User[]
+  files     File[]
+}
+
+model File {
+  id          Int      @id @default(autoincrement())
+  name        String
+  path        String
+  description String?
+  createdAt   DateTime @default(now())
+  classId     Int
+  class       Class    @relation(fields: [classId], references: [id])
+  questions   Question[]
+  answerImages AnswerImage[]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String // Added for hashed passwords
+  role      Role
+  classId   Int?
+  class     Class?   @relation(fields: [classId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+model Question {
+  id          Int      @id @default(autoincrement())
+  fileId      Int
+  pageNumber  Int
+  title       String
+  type        QuestionType
+  content     Json
+  answer      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  @@map("questions")
+}
+
+model AnswerImage {
+  id          Int      @id @default(autoincrement())
+  fileId      Int
+  pageNumber  Int
+  imagePath   String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  @@map("answer_images")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  COMPLETION
+}

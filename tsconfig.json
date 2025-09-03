@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/features/pdf-viewer/services/speechService.ts", "src/features/pdf-viewer/services/speechService.ts", "prisma/seed.js", "src/app/(admin)/dashboard/components/FileList"],
   "exclude": ["node_modules"]
 }
