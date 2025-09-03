@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const session = req.cookies.get("session_user");
-  if (!session && req.nextUrl.pathname.startsWith("/dashboard")) {
+  if (!session && (req.nextUrl.pathname.startsWith("/dashboard")||req.nextUrl.pathname=="/")) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 }
