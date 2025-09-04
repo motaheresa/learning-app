@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Upload, FileText, Check, AlertCircle, X, CloudUpload } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type ClassRecord = {
   id: number;
@@ -17,6 +18,7 @@ export default function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  const router = useRouter()
   useEffect(() => {
     async function loadClasses() {
       try {
@@ -90,10 +92,10 @@ export default function UploadPage() {
       });
 
       if (response.ok) {
-        e.currentTarget.reset();
         setSelectedFile(null);
         setUploadStatus("success");
-        setTimeout(() => setUploadStatus("idle"), 5000);
+        setTimeout(() =>  router.push("/admin"), 1500);
+       
       } else {
         setUploadStatus("error");
       }
