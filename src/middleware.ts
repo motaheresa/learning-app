@@ -2,17 +2,83 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-  
-  const session = req.cookies.get("session_user");
+// Define user roles for type safety
+type UserRole = 'ADMIN' | 'STUDENT';
 
-  // Protect dashboard and homepage
-  if (!session && (req.nextUrl.pathname.startsWith("/admin") ||req.nextUrl.pathname.startsWith("/user") || req.nextUrl.pathname === "/")) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+// Interface for the user session
+interface UserSession {
+  id: string;
+  email: string;
+  role: UserRole;
+}
+
+export function middleware(req: NextRequest) {
+  const sessionCookie = req.cookies.get("session_user");
+  const { pathname } = req.nextUrl;
+
+  // Public routes that don't require authentication
+  const publicRoutes = ['/auth/login', '/auth/register', '/api/public'];
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  
+  // If accessing a public route, no need to check authentication
+  if (isPublicRoute) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next(); // <-- important to continue if no redirect
+  // If no session and trying to access protected route, redirect to login
+  if (!sessionCookie) {
+    const loginUrl = new URL('/auth/login', req.url);
+    // Add redirect parameter to send user back after login
+    loginUrl.searchParams.set('callbackUrl', encodeURI(req.url));
+    return NextResponse.redirect(loginUrl);
+  }
+
+  try {
+    // Parse the session data
+    const session: UserSession = JSON.parse(sessionCookie.value);
+    
+    // Admin routes protection
+    if (pathname.startsWith('/admin')) {
+      if (session.role !== 'ADMIN') {
+        // If non-admin tries to access admin area, redirect to appropriate dashboard
+        const redirectUrl = session.role === 'STUDENT' 
+          ? '/user/dashboard' 
+          : '/auth/unauthorized';
+        return NextResponse.redirect(new URL(redirectUrl, req.url));
+      }
+    }
+    
+    // User routes protection
+    if (pathname.startsWith('/user')) {
+      if (session.role !== 'STUDENT') {
+        // If non-student tries to access user area, redirect to appropriate dashboard
+        const redirectUrl = session.role === 'ADMIN' 
+          ? '/admin' 
+          : '/auth/unauthorized';
+        return NextResponse.redirect(new URL(redirectUrl, req.url));
+      }
+    }
+
+    // Allow access to the requested route
+    return NextResponse.next();
+  } catch (error) {
+    // If session parsing fails, clear invalid cookie and redirect to login
+    console.error('Invalid session cookie:', error);
+    const response = NextResponse.redirect(new URL('/auth/login', req.url));
+    response.cookies.delete('session_user');
+    return response;
+  }
 }
+
 export const config = {
-  matcher: ["/:path*", "/"], 
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+  ],
 };
