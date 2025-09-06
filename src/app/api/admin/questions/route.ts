@@ -1,85 +1,59 @@
 // src/app/api/admin/questions/route.ts
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { QuestionsService } from "@/services/questions-service";
+import { ApiError, handleApiError, parseQueryParams } from "@/lib/api-utils";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const fileId = searchParams.get("fileId");
-    const pageNumber = searchParams.get("pageNumber");
-
-    const where: any = {};
-    if (fileId) where.fileId = parseInt(fileId, 10);
-    if (pageNumber) where.pageNumber = parseInt(pageNumber, 10);
-
-    const questions = await prisma.question.findMany({
-      where,
-      orderBy: { pageNumber: "asc" },
-      include: {
-        file: {
-          select: { id: true, name: true }
-        }
-      }
+    const filters = parseQueryParams(searchParams, {
+      fileId: 'number',
+      pageNumber: 'number'
     });
 
+    const questions = await QuestionsService.getQuestions(filters);
     return NextResponse.json(questions);
   } catch (error) {
-    console.error("Error fetching questions:", error);
-    return NextResponse.json({ error: "Failed to fetch questions" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
     const { fileId, pageNumber, title, type, content, answer } = data;
 
     if (!fileId || !pageNumber || !title || !type || !content || !answer) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      throw new ApiError(400, "All fields are required");
     }
 
-    const question = await prisma.question.create({
-      data: {
-        fileId: parseInt(fileId, 10),
-        pageNumber: parseInt(pageNumber, 10),
-        title,
-        type,
-        content,
-        answer
-      },
-      include: {
-        file: {
-          select: { id: true, name: true }
-        }
-      }
+    const question = await QuestionsService.createQuestion({
+      fileId,
+      pageNumber,
+      title,
+      type,
+      content,
+      answer
     });
 
     return NextResponse.json(question);
   } catch (error) {
-    console.error("Error creating question:", error);
-    return NextResponse.json({ error: "Failed to create question" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = parseInt(searchParams.get("id") || "", 10);
 
     if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid question ID" }, { status: 400 });
+      throw new ApiError(400, "Invalid question ID");
     }
 
-    await prisma.question.delete({
-      where: { id }
-    });
-
+    await QuestionsService.deleteQuestion(id);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting question:", error);
-    return NextResponse.json({ error: "Failed to delete question" }, { status: 500 });
+    return handleApiError(error);
   }
 }

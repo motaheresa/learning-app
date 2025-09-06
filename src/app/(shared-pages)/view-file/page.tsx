@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
 const DynamicPDFViewer = dynamic(
-  () => import("@/features/pdf-viewer").then((mod) => mod.default),
+  () => import("./components/PdfViewer").then((mod) => mod.default),
   {
     ssr: false,
     loading: () => <p>جارٍ تحميل عارض PDF...</p>,

@@ -1,117 +1,64 @@
-// /api/admin/files/route.ts
+// src/app/api/admin/files/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { FilesService } from "@/services/files-service";
+import { ApiError, handleApiError, parseQueryParams } from "@/lib/api-utils";
 
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { v2 as cloudinary } from 'cloudinary';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-// Original GET function remains unchanged
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  return NextResponse.json([
+  {
+    "id": 26,
+    "name": "مشروع “سوق المتاجر المتعددة”.pdf",
+    "path": "https://res.cloudinary.com/dsksugbfx/raw/upload/v1757135061/educational-files/lr0ln4ue39vcoe8pya66",
+    "description": null,
+    "createdAt": "2025-09-06T05:03:53.428Z",
+    "classId": 2,
+    "fileType":"pdf"
+  }
+])
   try {
     const { searchParams } = new URL(req.url);
-    const classId = searchParams.get("classId");
-
-    const files = await prisma.file.findMany({
-      where: classId ? { classId: parseInt(classId, 10) } : {},
-      orderBy: { createdAt: "desc" },
+    const filters = parseQueryParams(searchParams, {
+      classId: 'number'
     });
 
+    const files = await FilesService.getFiles(filters.classId);
+    
     return NextResponse.json(files);
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Failed to fetch files" }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
-// ✨ UPDATED POST FUNCTION: Uploads file to Cloudinary
-export async function POST(req: Request) {
-  console.log(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  process.env.CLOUDINARY_API_KEY,
-  process.env.CLOUDINARY_API_SECRET,)
+export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const classIdRaw = formData.get("classId") as string | null;
+    const classId = parseInt(formData.get("classId") as string, 10);
     const description = formData.get("description") as string | null;
 
-    const classId = classIdRaw ? parseInt(classIdRaw, 10) : null;
-
-    if (!file || !classId) {
-      return NextResponse.json(
-        { error: "File and classId are required" },
-        { status: 400 }
-      );
+    if (!file || isNaN(classId)) {
+      throw new ApiError(400, "File and classId are required");
     }
 
-    // Convert the file to a buffer, then to a base64 string
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const fileBase64 = `data:${file.type};base64,${buffer.toString('base64')}`;
-
-    // Upload the file to Cloudinary
-   const uploadResult = await cloudinary.uploader.upload(fileBase64, {
-      folder: 'educational-files',
-      resource_type: "raw", // Automatically detects file type (e.g., pdf)
-      access_mode: "public", // Make the file publicly accessible
-    });
-
-    // Create a new file record in the database with the Cloudinary URL
-    const newFile = await prisma.file.create({
-      data: {
-        name: file.name,
-        path: uploadResult.secure_url, // Store the Cloudinary URL
-        classId,
-        description: description || null,
-      },
-    });
-
+    const newFile = await FilesService.uploadFile(file, classId, description);
     return NextResponse.json(newFile);
-  } catch (err) {
-    console.error('Cloudinary upload or database operation failed:', err);
-    return NextResponse.json(
-      { error: "Failed to upload file" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
-// ✨ UPDATED DELETE FUNCTION: Deletes file from Cloudinary
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = parseInt(searchParams.get("id") || "", 10);
 
     if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+      throw new ApiError(400, "Invalid file ID");
     }
 
-    const file = await prisma.file.findUnique({ where: { id } });
-    if (!file) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
-    }
-    
-    // Extract the public ID from the Cloudinary URL
-    const publicIdWithExtension = file.path.split('/').pop();
-    const publicId = publicIdWithExtension.split('.')[0];
-    
-    // Delete the file from Cloudinary using its public ID
-    await cloudinary.uploader.destroy(`nextjs-pdfs/${publicId}`);
-
-    // Delete the file record from the database
-    await prisma.file.delete({ where: { id } });
-
+    await FilesService.deleteFile(id);
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('Cloudinary deletion or database operation failed:', err);
-    return NextResponse.json(
-      { error: "Failed to delete file" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

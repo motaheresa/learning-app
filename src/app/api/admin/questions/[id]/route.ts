@@ -1,60 +1,52 @@
 // src/app/api/admin/questions/[id]/route.ts
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { QuestionsService } from "@/services/questions-service";
+import { ApiError, handleApiError } from "@/lib/api-utils";
 
 export async function PUT(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const id = parseInt(params.id, 10);
+    if (isNaN(id)) {
+      throw new ApiError(400, "Invalid question ID");
+    }
+
     const data = await req.json();
     const { pageNumber, title, type, content, answer } = data;
 
     if (!pageNumber || !title || !type || !content || !answer) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      throw new ApiError(400, "All fields are required");
     }
 
-    const question = await prisma.question.update({
-      where: { id },
-      data: {
-        pageNumber: parseInt(pageNumber, 10),
-        title,
-        type,
-        content,
-        answer
-      },
-      include: {
-        file: {
-          select: { id: true, name: true }
-        }
-      }
+    const question = await QuestionsService.updateQuestion(id, {
+      pageNumber,
+      title,
+      type,
+      content,
+      answer
     });
 
     return NextResponse.json(question);
   } catch (error) {
-    console.error("Error updating question:", error);
-    return NextResponse.json({ error: "Failed to update question" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
 export async function DELETE(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const id = parseInt(params.id, 10);
+    if (isNaN(id)) {
+      throw new ApiError(400, "Invalid question ID");
+    }
 
-    await prisma.question.delete({
-      where: { id }
-    });
-
+    await QuestionsService.deleteQuestion(id);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting question:", error);
-    return NextResponse.json({ error: "Failed to delete question" }, { status: 500 });
+    return handleApiError(error);
   }
 }

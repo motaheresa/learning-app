@@ -1,110 +1,85 @@
 // src/app/admin/questions/page.tsx
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, HelpCircle, Image, FileText, Trash2, Edit } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { useQuestionManagement } from "./hooks/useQuestionManagement";
+import { QuestionTab, AnswerImageTab, SearchFilter } from "./components/ui";
 import QuestionForm from "./components/QuestionForm";
 import AnswerImageForm from "./components/AnswerImageForm";
-
-type FileRecord = {
-  id: number;
-  name: string;
-  path: string;
-  class?: string;
-};
-
-type Question = {
-  id: number;
-  fileId: number;
-  pageNumber: number;
-  title: string;
-  type: "MULTIPLE_CHOICE" | "COMPLETION";
-  content: any;
-  answer: any;
-  file: { id: number; name: string };
-};
-
-type AnswerImage = {
-  id: number;
-  fileId: number;
-  pageNumber: number;
-  imagePath: string;
-  description?: string;
-  file: { id: number; name: string };
-};
+import { Question } from "./types/question";
 
 export default function QuestionManagementPage() {
-  const [files, setFiles] = useState<FileRecord[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answerImages, setAnswerImages] = useState<AnswerImage[]>([]);
-  const [selectedFile, setSelectedFile] = useState<number | null>(null);
+  const {
+    files,
+    questions,
+    answerImages,
+    selectedFile,
+    loading,
+    error,
+    setSelectedFile,
+    loadFiles,
+    loadQuestions,
+    loadAnswerImages,
+    deleteQuestion,
+    deleteAnswerImage
+  } = useQuestionManagement();
+
   const [activeTab, setActiveTab] = useState<'questions' | 'answers'>('questions');
   const [showQuestionForm, setShowQuestionForm] = useState(false);
   const [showAnswerForm, setShowAnswerForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPage, setFilterPage] = useState<number | ''>('');
 
   useEffect(() => {
     loadFiles();
-  }, []);
+  }, [loadFiles]);
 
   useEffect(() => {
     if (selectedFile) {
-      loadQuestions();
-      loadAnswerImages();
+      loadQuestions(selectedFile);
+      loadAnswerImages(selectedFile);
     }
-  }, [selectedFile]);
+  }, [selectedFile, loadQuestions, loadAnswerImages]);
 
-  const loadFiles = async () => {
-    try {
-      const res = await fetch("/api/admin/files");
-      const data = await res.json();
-      setFiles(data);
-    } catch (error) {
-      console.error("Error loading files:", error);
-    }
-  };
+  const filteredQuestions = questions.filter(question =>
+    question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    question.content.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (filterPage !== '' && question.pageNumber === filterPage)
+  );
 
-  const loadQuestions = async () => {
-    if (!selectedFile) return;
-    try {
-      const res = await fetch(`/api/admin/questions?fileId=${selectedFile}`);
-      const data = await res.json();
-      setQuestions(data);
-    } catch (error) {
-      console.error("Error loading questions:", error);
-    }
-  };
-
-  const loadAnswerImages = async () => {
-    if (!selectedFile) return;
-    try {
-      const res = await fetch(`/api/admin/answer-images?fileId=${selectedFile}`);
-      const data = await res.json();
-      setAnswerImages(data);
-    } catch (error) {
-      console.error("Error loading answer images:", error);
-    }
-  };
+  const filteredAnswerImages = answerImages.filter(image =>
+    image.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (filterPage !== '' && image.pageNumber === filterPage)
+  );
 
   const handleDeleteQuestion = async (id: number) => {
     if (confirm("Are you sure you want to delete this question?")) {
-      try {
-        await fetch(`/api/admin/questions?id=${id}`, { method: "DELETE" });
-        loadQuestions();
-      } catch (error) {
-        console.error("Error deleting question:", error);
+      const success = await deleteQuestion(id);
+      if (success && selectedFile) {
+        loadQuestions(selectedFile);
       }
     }
   };
 
   const handleDeleteAnswerImage = async (id: number) => {
     if (confirm("Are you sure you want to delete this answer image?")) {
-      try {
-        await fetch(`/api/admin/answer-images?id=${id}`, { method: "DELETE" });
-        loadAnswerImages();
-      } catch (error) {
-        console.error("Error deleting answer image:", error);
+      const success = await deleteAnswerImage(id);
+      if (success && selectedFile) {
+        loadAnswerImages(selectedFile);
       }
     }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterPage('');
+  };
+
+  const getSearchPlaceholder = () => {
+    return activeTab === 'questions' 
+      ? 'Search questions...' 
+      : 'Search answer images...';
   };
 
   return (
@@ -119,6 +94,17 @@ export default function QuestionManagementPage() {
         </p>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-red-800 dark:text-red-300 font-medium">Error</p>
+            <p className="text-red-700 dark:text-red-400 text-sm mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* File Selection */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-slate-200 dark:border-gray-700 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-gray-100 mb-4">
@@ -128,11 +114,12 @@ export default function QuestionManagementPage() {
           value={selectedFile || ""}
           onChange={(e) => setSelectedFile(e.target.value ? parseInt(e.target.value) : null)}
           className="w-full px-4 py-3 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100"
+          disabled={loading.files}
         >
           <option value="">Choose a PDF file...</option>
           {files.map((file) => (
             <option key={file.id} value={file.id}>
-              {file.name} {file.class && `(${file.class})`}
+              {file.name} {file.className && `(${file.className})`}
             </option>
           ))}
         </select>
@@ -152,10 +139,7 @@ export default function QuestionManagementPage() {
                       : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4" />
-                    Questions ({questions.length})
-                  </div>
+                  Questions ({questions.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('answers')}
@@ -165,142 +149,42 @@ export default function QuestionManagementPage() {
                       : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Image className="w-4 h-4" />
-                    Answer Images ({answerImages.length})
-                  </div>
+                  Answer Images ({answerImages.length})
                 </button>
               </nav>
             </div>
 
             <div className="p-6">
+              {/* Search and Filter */}
+              <SearchFilter
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                filterPage={filterPage}
+                onFilterPageChange={setFilterPage}
+                onClearFilters={clearFilters}
+                placeholder={getSearchPlaceholder()}
+              />
+
               {activeTab === 'questions' ? (
-                <div className="space-y-6">
-                  {/* Add Question Button */}
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-gray-100">
-                      Questions
-                    </h3>
-                    <button
-                      onClick={() => setShowQuestionForm(true)}
-                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Question
-                    </button>
-                  </div>
-
-                  {/* Questions List */}
-                  <div className="space-y-4">
-                    {questions.length === 0 ? (
-                      <div className="text-center py-8 text-slate-500 dark:text-gray-400">
-                        No questions added yet
-                      </div>
-                    ) : (
-                      questions.map((question) => (
-                        <div
-                          key={question.id}
-                          className="border border-slate-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-sm transition-shadow"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">
-                                  Page {question.pageNumber}
-                                </span>
-                                <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-xs font-medium">
-                                  {question.type.replace('_', ' ')}
-                                </span>
-                              </div>
-                              <h4 className="font-semibold text-slate-800 dark:text-gray-100 mb-2">
-                                {question.title}
-                              </h4>
-                              <p className="text-sm text-slate-600 dark:text-gray-300">
-                                {question.content.question}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 ml-4">
-                              <button
-                                onClick={() => {
-                                  setEditingQuestion(question);
-                                  setShowQuestionForm(true);
-                                }}
-                                className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteQuestion(question.id)}
-                                className="p-2 text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <QuestionTab
+                  questions={filteredQuestions}
+                  loading={loading}
+                  onAddQuestion={() => setShowQuestionForm(true)}
+                  onEditQuestion={setEditingQuestion}
+                  onDeleteQuestion={handleDeleteQuestion}
+                />
               ) : (
-                <div className="space-y-6">
-                  {/* Add Answer Image Button */}
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-gray-100">
-                      Answer Images
-                    </h3>
-                    <button
-                      onClick={() => setShowAnswerForm(true)}
-                      className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Answer Image
-                    </button>
-                  </div>
-
-                  {/* Answer Images Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {answerImages.length === 0 ? (
-                      <div className="col-span-full text-center py-8 text-slate-500 dark:text-gray-400">
-                        No answer images added yet
-                      </div>
-                    ) : (
-                      answerImages.map((answerImage) => (
-                        <div
-                          key={answerImage.id}
-                          className="border border-slate-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-sm transition-shadow"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded text-xs font-medium">
-                              Page {answerImage.pageNumber}
-                            </span>
-                            <button
-                              onClick={() => handleDeleteAnswerImage(answerImage.id)}
-                              className="p-1 text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <img
-                            src={answerImage.imagePath}
-                            alt="Answer"
-                            className="w-full h-32 object-cover rounded-lg mb-2"
-                          />
-                          {answerImage.description && (
-                            <p className="text-sm text-slate-600 dark:text-gray-300">
-                              {answerImage.description}
-                            </p>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <AnswerImageTab
+                  answerImages={filteredAnswerImages}
+                  loading={loading}
+                  onAddAnswerImage={() => setShowAnswerForm(true)}
+                  onDeleteAnswerImage={handleDeleteAnswerImage}
+                />
               )}
             </div>
           </div>
 
-          {/* Question Form Modal */}
+          {/* Modals */}
           {showQuestionForm && (
             <QuestionForm
               fileId={selectedFile}
@@ -310,20 +194,23 @@ export default function QuestionManagementPage() {
                 setEditingQuestion(null);
               }}
               onSaved={() => {
-                loadQuestions();
+                if (selectedFile) {
+                  loadQuestions(selectedFile);
+                }
                 setShowQuestionForm(false);
                 setEditingQuestion(null);
               }}
             />
           )}
 
-          {/* Answer Image Form Modal */}
           {showAnswerForm && (
             <AnswerImageForm
               fileId={selectedFile}
               onClose={() => setShowAnswerForm(false)}
               onSaved={() => {
-                loadAnswerImages();
+                if (selectedFile) {
+                  loadAnswerImages(selectedFile);
+                }
                 setShowAnswerForm(false);
               }}
             />

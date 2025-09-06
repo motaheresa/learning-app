@@ -13,11 +13,11 @@ interface UserSession {
 }
 
 export function middleware(req: NextRequest) {
-  const sessionCookie = req.cookies.get("session_user");
+  const sessionCookie = req.cookies.get("session_user")!;
   const { pathname } = req.nextUrl;
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/auth/login', '/auth/register', '/api/public'];
+  const publicRoutes = ['/auth/login',"/"];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   
   // If accessing a public route, no need to check authentication
@@ -33,12 +33,17 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  
   try {
     // Parse the session data
-    const session: UserSession = JSON.parse(sessionCookie.value);
-    
+    const session: UserSession  & { exp?: number } = JSON.parse(sessionCookie.value);
+  if (session.exp && Date.now() > session.exp) {
+  const response = NextResponse.redirect(new URL('/auth/login', req.url));
+  response.cookies.delete('session_user');
+  return response;
+}  
     // Admin routes protection
-    if (pathname.startsWith('/admin')) {
+    if (pathname.startsWith('/admin')&&!pathname.includes("files")) {
       if (session.role !== 'ADMIN') {
         // If non-admin tries to access admin area, redirect to appropriate dashboard
         const redirectUrl = session.role === 'STUDENT' 

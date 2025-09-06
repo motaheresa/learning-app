@@ -1,18 +1,24 @@
+// src/app/admin/classes/page.tsx
 "use client";
-import AddClassForm from "@/features/classes/components/AddClassForm";
-import { ClassList } from "@/features/classes/components/ClassList";
-import { useClasses } from "@/features/classes/hooks/useClasses";
-import { GraduationCap, TrendingUp, Users, BookOpen } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertCircle, Loader2, GraduationCap } from "lucide-react";
+import { useClasses, useClassStats } from "./_hooks";
+import { AddClassForm, ClassList, StatsCards } from "./_components";
 
 export default function ClassesPage() {
-  const { classes, reload } = useClasses();
+  const { classes, loading, error, reload } = useClasses();
+  const { stats, loading: statsLoading, error: statsError } = useClassStats();
 
-  // Mock data for demonstration
-  const stats = {
-    totalStudents: 156,
-    activeClasses: classes.length,
-    totalFiles: 89,
-    averageFilesPerClass: classes.length > 0 ? Math.round(89 / classes.length) : 0
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  const handleClassAdded = () => {
+    reload();
+  };
+
+  const handleClassUpdate = () => {
+    reload();
   };
 
   return (
@@ -27,100 +33,52 @@ export default function ClassesPage() {
         </p>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-red-800 dark:text-red-300 font-medium">Error</p>
+            <p className="text-red-700 dark:text-red-400 text-sm mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Total Students Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-gray-700 shadow-sm transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-slate-600 dark:text-gray-300 text-sm font-medium truncate">
-                Total Students
-              </p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-gray-100 mt-1 transition-colors">
-                {stats.totalStudents}
-              </p>
+      {statsLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-slate-200 dark:border-gray-700 shadow-sm animate-pulse">
+              <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
+              <div className="h-8 bg-slate-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+              <div className="h-3 bg-slate-200 dark:bg-gray-700 rounded w-3/4"></div>
             </div>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
-              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 mt-3 text-sm">
-            <TrendingUp className="w-4 h-4 text-green-500 dark:text-green-400 flex-shrink-0" />
-            <span className="text-green-600 dark:text-green-400 font-medium">+12%</span>
-            <span className="text-slate-500 dark:text-gray-400 truncate">vs last month</span>
-          </div>
+          ))}
         </div>
-
-        {/* Active Classes Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-gray-700 shadow-sm transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-slate-600 dark:text-gray-300 text-sm font-medium truncate">
-                Active Classes
-              </p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-gray-100 mt-1 transition-colors">
-                {stats.activeClasses}
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg flex-shrink-0">
-              <GraduationCap className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 mt-3 text-sm">
-            <TrendingUp className="w-4 h-4 text-green-500 dark:text-green-400 flex-shrink-0" />
-            <span className="text-green-600 dark:text-green-400 font-medium">+3</span>
-            <span className="text-slate-500 dark:text-gray-400 truncate">new this month</span>
-          </div>
+      ) : statsError ? (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <p className="text-yellow-800 dark:text-yellow-300 text-sm">
+            Stats unavailable: {statsError}
+          </p>
         </div>
-
-        {/* Total Files Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-gray-700 shadow-sm transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-slate-600 dark:text-gray-300 text-sm font-medium truncate">
-                Total Files
-              </p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-gray-100 mt-1 transition-colors">
-                {stats.totalFiles}
-              </p>
-            </div>
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex-shrink-0">
-              <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 mt-3 text-sm">
-            <TrendingUp className="w-4 h-4 text-green-500 dark:text-green-400 flex-shrink-0" />
-            <span className="text-green-600 dark:text-green-400 font-medium">+8</span>
-            <span className="text-slate-500 dark:text-gray-400 truncate">files this week</span>
-          </div>
-        </div>
-
-        {/* Average Files per Class Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-gray-700 shadow-sm transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-slate-600 dark:text-gray-300 text-sm font-medium truncate">
-                Avg Files/Class
-              </p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-gray-100 mt-1 transition-colors">
-                {stats.averageFilesPerClass}
-              </p>
-            </div>
-            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex-shrink-0">
-              <BookOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 mt-3 text-sm">
-            <span className="text-slate-500 dark:text-gray-400">Per class average</span>
-          </div>
-        </div>
-      </div>
+      ) : (
+        <StatsCards
+          classesCount={stats.classesCount}
+          totalStudents={stats.totalStudents}
+          totalFiles={stats.totalFiles}
+          averageFilesPerClass={stats.averageFilesPerClass}
+        />
+      )}
 
       {/* Add Class Form */}
-      <AddClassForm onAdded={reload} />
+      <AddClassForm onAdded={handleClassAdded} />
       
       {/* Class List */}
-      <ClassList classes={classes} onClassUpdate={reload} />
+      <ClassList 
+        classes={classes} 
+        onClassUpdate={handleClassUpdate}
+        loading={loading}
+      />
     </div>
   );
 }

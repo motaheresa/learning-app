@@ -1,41 +1,128 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { Bell, Search, User, Clock, Calendar, Menu } from "lucide-react";
-import { useDarkMode } from "../layout";
+import { useDarkMode } from "@/hooks/useDarkMode";
+import { useSession } from "@/hooks/useSession";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
-export default function Header({ onMenuClick }: HeaderProps) {
+// Memoized component to prevent unnecessary re-renders
+const DateTimeDisplay = memo(() => {
   const [time, setTime] = useState<string>("");
   const [date, setDate] = useState<string>("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const { isDark } = useDarkMode();
 
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date();
-      setTime(now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      }));
-      setDate(now.toLocaleDateString('en-US', { 
-        weekday: 'long',
-        month: 'short', 
-        day: 'numeric' 
-      }));
+      setTime(
+        now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      );
+      setDate(
+        now.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        })
+      );
     };
 
     updateDateTime();
-    const interval = setInterval(updateDateTime, 1000);
+    const interval = setInterval(updateDateTime, 60000); // Update every minute
+
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4 shadow-sm transition-colors">
+    <>
+      <div className="hidden xl:flex items-center gap-4 text-sm text-slate-600 dark:text-gray-300">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 flex-shrink-0" />
+          <span className="font-medium">{date}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 flex-shrink-0" />
+          <span className="font-mono">{time}</span>
+        </div>
+      </div>
+
+      {/* Mobile Date/Time */}
+      <div className="xl:hidden mt-4 pt-4 border-t border-slate-200 dark:border-gray-700 flex items-center justify-center gap-6 text-sm text-slate-600 dark:text-gray-300">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 flex-shrink-0" />
+          <span className="font-medium">{date}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 flex-shrink-0" />
+          <span className="font-mono">{time}</span>
+        </div>
+      </div>
+    </>
+  );
+});
+
+DateTimeDisplay.displayName = "DateTimeDisplay";
+
+// Search component to reduce duplication
+const SearchBar = ({ isMobile = false, autoFocus = false, onClose }: { 
+  isMobile?: boolean; 
+  autoFocus?: boolean;
+  onClose?: () => void;
+}) => {
+  const [searchValue, setSearchValue] = useState("");
+
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    // Implement search functionality
+    console.log("Searching for:", searchValue);
+    if (onClose) onClose();
+  }, [searchValue, onClose]);
+
+  return (
+    <form 
+      onSubmit={handleSearch} 
+      className={isMobile ? "lg:hidden mt-4 pt-4 border-t border-slate-200 dark:border-gray-700 search-container" : "relative hidden lg:flex"}
+    >
+      <div className="relative w-full">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500" />
+        <input
+          type="text"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          placeholder="Search files, classes..."
+          className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 dark:text-gray-100 placeholder-slate-500 dark:placeholder-gray-400"
+          autoFocus={autoFocus}
+        />
+      </div>
+    </form>
+  );
+};
+
+export default function Header({ onMenuClick }: HeaderProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { isDark } = useDarkMode();
+  const { user } = useSession();
+
+  // Close search when clicking outside (for mobile)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchOpen && !(event.target as Element).closest('.search-container')) {
+        setSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [searchOpen]);
+
+  return (
+    <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4 shadow-sm transition-colors sticky top-0 z-40">
       <div className="flex justify-between items-center max-w-7xl mx-auto">
         {/* Left Section */}
         <div className="flex items-center gap-4">
@@ -43,6 +130,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -52,14 +140,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </h1>
           
           {/* Desktop Search Bar */}
-          <div className="relative hidden lg:flex">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search files, classes..."
-              className="pl-10 pr-4 py-2 w-80 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 dark:text-gray-100 placeholder-slate-500 dark:placeholder-gray-400"
-            />
-          </div>
+          <SearchBar />
         </div>
 
         {/* Right Section */}
@@ -68,36 +149,30 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <button
             onClick={() => setSearchOpen(!searchOpen)}
             className="lg:hidden p-2 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            aria-label={searchOpen ? "Close search" : "Open search"}
           >
             <Search className="w-5 h-5" />
           </button>
 
-          {/* Date & Time */}
-          <div className="hidden xl:flex items-center gap-4 text-sm text-slate-600 dark:text-gray-300">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span className="font-medium">{date}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span className="font-mono">{time}</span>
-            </div>
-          </div>
+          <DateTimeDisplay />
 
           {/* Notifications */}
-          <button className="relative p-2 text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-gray-100 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <button 
+            className="relative p-2 text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-gray-100 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            aria-label="Notifications"
+          >
             <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
           </button>
 
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-gray-700">
             <div className="hidden sm:block text-right">
               <div className="text-sm font-semibold text-slate-800 dark:text-gray-100">
-                Admin User
+                {user?.name || user?.email || "User"}
               </div>
-              <div className="text-xs text-slate-500 dark:text-gray-400">
-                Administrator
+              <div className="text-xs text-slate-500 dark:text-gray-400 capitalize">
+                {user?.role?.toLowerCase() || "user"}
               </div>
             </div>
             <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -108,31 +183,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       {/* Mobile Search Bar */}
-      {searchOpen && (
-        <div className="lg:hidden mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search files, classes..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 dark:text-gray-100 placeholder-slate-500 dark:placeholder-gray-400"
-              autoFocus
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Date/Time */}
-      <div className="xl:hidden mt-4 pt-4 border-t border-slate-200 dark:border-gray-700 flex items-center justify-center gap-6 text-sm text-slate-600 dark:text-gray-300">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
-          <span className="font-medium">{date}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4" />
-          <span className="font-mono">{time}</span>
-        </div>
-      </div>
+      {searchOpen && <SearchBar isMobile autoFocus onClose={() => setSearchOpen(false)} />}
     </header>
   );
 }
