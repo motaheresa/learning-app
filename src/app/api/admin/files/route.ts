@@ -4,17 +4,6 @@ import { FilesService } from "@/services/files-service";
 import { ApiError, handleApiError, parseQueryParams } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
-  return NextResponse.json([
-  {
-    "id": 26,
-    "name": "مشروع “سوق المتاجر المتعددة”.pdf",
-    "path": "https://res.cloudinary.com/dsksugbfx/raw/upload/v1757135061/educational-files/lr0ln4ue39vcoe8pya66",
-    "description": null,
-    "createdAt": "2025-09-06T05:03:53.428Z",
-    "classId": 2,
-    "fileType":"pdf"
-  }
-])
   try {
     const { searchParams } = new URL(req.url);
     const filters = parseQueryParams(searchParams, {
