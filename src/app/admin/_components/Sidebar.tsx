@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   FileText,
   Upload,
@@ -18,6 +18,7 @@ import {
   HelpCircle
 } from "lucide-react";
 import { useDarkMode } from "../layout";
+import axios from "axios";
 
 
 interface SidebarProps {
@@ -26,6 +27,7 @@ interface SidebarProps {
 
 export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router=useRouter()
   const { isDark, toggleDarkMode } = useDarkMode();
 
   const links = [
@@ -67,6 +69,15 @@ export default function Sidebar({ onClose }: SidebarProps) {
     },
   ];
 
+  const handleLogOut=async()=>{
+    try {
+      await axios.post(`/api/logout`)
+      router.push("/auth/login")
+    } catch (error) {
+      console.error(error);
+      
+    }
+  }
   return (
     <aside className="sticky top-0 w-full h-screen bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 shadow-sm flex flex-col transition-colors">
       {/* Mobile Close Button */}
@@ -160,15 +171,15 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* Logout Section */}
       <div className="p-4 border-t border-slate-200 dark:border-gray-700">
-        <Link
-          href="/logout"
-          className="flex items-center gap-4 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 group"
+        <button
+        onClick={handleLogOut}
+          className="w-full cursor-pointer flex items-center gap-4 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 group"
         >
           <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/30 group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors">
             <LogOut className="w-4 h-4" />
           </div>
           <span className="font-medium">Sign Out</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

@@ -35,5 +35,5 @@ export async function loginAction(formData: FormData) {
     }
   );
 
-  return { success: true, role: user.role };
+  return { success: true, role: user.role,email:user.email };
 }

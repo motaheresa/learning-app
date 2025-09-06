@@ -7,7 +7,7 @@ export function middleware(req: NextRequest) {
   const session = req.cookies.get("session_user");
 
   // Protect dashboard and homepage
-  if (!session && (req.nextUrl.pathname.startsWith("/admin") || req.nextUrl.pathname === "/")) {
+  if (!session && (req.nextUrl.pathname.startsWith("/admin") ||req.nextUrl.pathname.startsWith("/user") || req.nextUrl.pathname === "/")) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 

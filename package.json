@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
+    "@tanstack/react-query": "^4.40.1",
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@tanstack/eslint-plugin-query": "^4.39.1",
     "@types/bcrypt": "^6.0.0",
     "@types/next-auth": "^3.13.0",
     "@types/node": "^20",

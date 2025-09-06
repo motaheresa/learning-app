@@ -15,12 +15,18 @@ export default function LoginPage() {
 
     const formData = new FormData(e.currentTarget);
     const res = await loginAction(formData);
+    
 
+    
     if (res.success) {
       if(res.role=="ADMIN"){
         router.push("/admin");
-      }else{
-        router.push("/user/dashboard")
+      }else if(res.role=="STUDENT"&&res.email.startsWith("class1")){
+        router.push("/user/dashboard?class=1")
+      }else if(res.role=="STUDENT"&&res.email.startsWith("class2")){
+        router.push("/user/dashboard?class=2")
+      }else if(res.role=="STUDENT"&&res.email.startsWith("class3")){
+        router.push("/user/dashboard?class=3")
       }
     } else {
       setError(res.message || "Login failed");
