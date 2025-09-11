@@ -149,10 +149,9 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
   }, [pathname, isMobile, onClose]);
 
   return (
-    <aside className="sticky top-0 w-full h-screen bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 shadow-sm flex flex-col transition-colors z-50">
+    <aside className="sticky top-0 w-full h-screen overflow-hidden bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 shadow-sm flex flex-col transition-colors z-50">
       {/* Mobile Close Button */}
-      {isMobile && (
-        <div className="lg:hidden flex justify-end p-4">
+        <div className="lg:hidden flex justify-end pt-4 pr-4">
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
@@ -161,7 +160,6 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             <X className="w-5 h-5" />
           </button>
         </div>
-      )}
 
       {/* Logo & Brand */}
       <div className="p-6 border-b border-slate-200 dark:border-gray-700">
@@ -183,7 +181,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+      <nav className="p-4 space-y-2">
         {filteredLinks.map((link) => {
           const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
           
@@ -196,12 +194,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
             />
           );
         })}
-        
-        {filteredLinks.length === 0 && (
-          <div className="text-center py-8 text-slate-500 dark:text-gray-400">
-            <p>No menu items available for your role.</p>
-          </div>
-        )}
+
       </nav>
 
       {/* Dark Mode Toggle */}
