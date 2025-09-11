@@ -1,10 +1,9 @@
-// components/FileCard.tsx
 "use client";
 
 import React from "react";
 import Link from "next/link";
-import { Eye, FileText } from "lucide-react";
-import { File } from "@/types";
+import { Eye, FileText, Star } from "lucide-react";
+import { File } from "../../_types";
 
 interface FileCardProps {
   file: File;
@@ -14,54 +13,57 @@ interface FileCardProps {
 const FileCard = ({ file, index }: FileCardProps) => {
   return (
     <div
-      className="group relative bg-white/60 dark:bg-slate-700/60 backdrop-blur-sm rounded-2xl border border-slate-200/80 dark:border-slate-600/80 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl dark:hover:shadow-slate-900/40 transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in-up"
-      style={{ animationDelay: `${index * 100}ms` }}
+      className="group relative bg-gradient-to-br from-white via-pink-50 to-purple-50 dark:from-slate-800 dark:via-purple-900/20 dark:to-blue-900/20 backdrop-blur-sm rounded-3xl border-2 border-pink-200/80 dark:border-purple-600/80 hover:border-pink-400 dark:hover:border-purple-400 hover:shadow-2xl dark:hover:shadow-purple-900/60 transition-all duration-500 hover:-translate-y-2 hover:rotate-1 overflow-hidden animate-fade-in-up"
+      style={{ animationDelay: `${index * 150}ms` }}
     >
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-50/30 dark:to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      {/* Animated gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-purple-100/20 to-blue-100/20 dark:from-pink-900/10 dark:via-purple-900/10 dark:to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       
-      <div className="relative p-6">
-        {/* File Icon */}
-        <div className="flex items-start justify-between mb-6">
+      {/* Floating stars */}
+      <Star className="absolute top-2 right-2 w-3 h-3 md:w-4 md:h-4 text-yellow-400 opacity-0 group-hover:opacity-100 animate-twinkle transition-opacity duration-300" />
+      <Star className="absolute top-4 left-4 w-2 h-2 md:w-3 md:h-3 text-pink-400 opacity-0 group-hover:opacity-100 animate-twinkle transition-opacity duration-300" style={{animationDelay: '0.5s'}} />
+      
+      <div className="relative p-4 md:p-6">
+        {/* Enhanced File Icon */}
+        <div className="flex items-start justify-between mb-4 md:mb-6">
           <div className="relative">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
-              <FileText className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 rounded-3xl flex items-center justify-center shadow-2xl group-hover:shadow-pink-500/50 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 ">
+              <FileText className="w-5 h-5 md:w-8 md:h-8 text-white animate-pulse" />
             </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white dark:border-slate-700 opacity-90"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 md:w-6 md:h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 md:border-3 border-white dark:border-slate-700 opacity-90 animate-heartbeat"></div>
           </div>
           
-          {/* File Date */}
+          {/* Enhanced File Date */}
           {file.createdAt && (
-            <div className="text-xs text-slate-500 dark:text-slate-400 text-left">
-              {new Date(file.createdAt).toLocaleDateString('ar-SA')}
+            <div className="text-xs text-purple-600 dark:text-purple-400 text-left bg-white/60 dark:bg-purple-900/30 px-2 py-1 md:px-3 md:py-1 rounded-full font-semibold">
+              📅 {new Date(file.createdAt).toLocaleDateString('ar-SA')}
             </div>
           )}
         </div>
         
-        {/* File Name */}
-        <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-3 text-lg line-clamp-2 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">
-          {file.name}
+        {/* Enhanced File Name */}
+        <h3 className="font-black text-purple-800 dark:text-purple-200 mb-3 md:mb-4 text-base md:text-xl line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors duration-300">
+          📄 {file.name}
         </h3>
         
-        {/* Class Badge */}
+        {/* Enhanced Class Badge */}
         {file.class && (
-          <div className="mb-4">
-            <span className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold rounded-full border border-emerald-200 dark:border-emerald-700">
-              {file.class}
+          <div className="mb-3 md:mb-4">
+            <span className="inline-flex items-center px-3 py-1 md:px-4 md:py-2 bg-gradient-to-r from-emerald-200 via-green-200 to-teal-200 dark:from-emerald-900/60 dark:via-green-900/60 dark:to-teal-900/60 text-emerald-800 dark:text-emerald-200 text-xs md:text-sm font-bold rounded-2xl border-2 border-emerald-300 dark:border-emerald-600 shadow-lg animate-wiggle">
+              🎓 {file.class}
             </span>
           </div>
         )}
         
-        {/* Description */}
+        {/* Enhanced Description */}
         {file.description && (
-          <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 line-clamp-3 leading-relaxed">
-            {file.description}
+          <p className="text-purple-700 dark:text-purple-400 text-xs md:text-sm mb-4 md:mb-6 line-clamp-3 leading-relaxed font-medium">
+            ✨ {file.description}
           </p>
         )}
         
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-600">
-          {/* View File Button */}
+        {/* Enhanced Action Button */}
+        <div className="flex flex-col gap-2 md:gap-3 pt-3 md:pt-4 border-t-2 border-pink-200 dark:border-purple-600">
           <Link
             href={{
               pathname: "/view-file",
@@ -69,10 +71,9 @@ const FileCard = ({ file, index }: FileCardProps) => {
             }}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg group-hover:shadow-blue-500/25"
+            className="w-full inline-flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:from-pink-600 hover:via-purple-600 hover:to-blue-600 text-white font-bold py-2 md:py-4 px-4 md:px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 text-sm md:text-base"
           >
-            <Eye className="w-4 h-4" />
-            عرض الملف
+            👀 عرض الملف
           </Link>
         </div>
       </div>

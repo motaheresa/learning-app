@@ -155,6 +155,7 @@ export default function AdminPage() {
             <div className="relative">
               <Filter className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <select
+              aria-label="class filter"
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className="pl-10 pr-8 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 min-w-40"
@@ -172,6 +173,7 @@ export default function AdminPage() {
           {/* View Mode Toggle */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
             <button
+            aria-label="Files Grid"
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-md transition-colors ${
                 viewMode === "grid"
@@ -182,6 +184,7 @@ export default function AdminPage() {
               <Grid className="w-4 h-4" />
             </button>
             <button
+            aria-label="Files List"
               onClick={() => setViewMode("list")}
               className={`p-2 rounded-md transition-colors ${
                 viewMode === "list"
@@ -230,7 +233,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleDelete(file.id)}
-                            className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                            className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
                             title="Delete file"
                           >
                             <Trash2 className="w-4 h-4" />

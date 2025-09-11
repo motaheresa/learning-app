@@ -54,20 +54,6 @@ const navigationLinks = [
     description: "Manage Q&A Content",
     roles: ["ADMIN", "TEACHER"]
   },
-  {
-    href: "/admin/users",
-    label: "User Management",
-    icon: Users,
-    description: "Manage Users",
-    roles: ["ADMIN"]
-  },
-  {
-    href: "/admin/settings",
-    label: "Settings",
-    icon: Settings,
-    description: "System Configuration",
-    roles: ["ADMIN"]
-  },
 ];
 
 // Sidebar link component for better performance
