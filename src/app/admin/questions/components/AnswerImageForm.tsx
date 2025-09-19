@@ -52,7 +52,7 @@ export default function AnswerImageForm({ fileId, onClose, onSaved }: AnswerImag
       if (response.ok) {
         onSaved();
       } else {
-        console.error("Failed to upload answer image");
+        console.error("Failed to upload answer image",response);
       }
     } catch (error) {
       console.error("Error uploading answer image:", error);

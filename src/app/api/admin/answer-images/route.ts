@@ -21,6 +21,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("Cloudinary config:", {
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY ? "set" : "missing",
+  api_secret: process.env.CLOUDINARY_API_SECRET ? "set" : "missing",
+});
   try {
     const formData = await req.formData();
     const image = formData.get("image") as File | null;

@@ -1,79 +1,78 @@
 // src/services/answer-images-service.ts
 import { prisma } from '@/lib/prisma';
-import { writeFile, unlink, access, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { nanoid } from 'nanoid';
+import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "answers");
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 export class AnswerImagesService {
   static async getAnswerImages(filters: { fileId?: number; pageNumber?: number }) {
     return prisma.answerImage.findMany({
       where: filters,
-      orderBy: { pageNumber: "asc" },
+      orderBy: { pageNumber: 'asc' },
       include: {
-        file: {
-          select: { id: true, name: true }
-        }
-      }
+        file: { select: { id: true, name: true } },
+      },
     });
   }
 
   static async createAnswerImage(
-    image: File, 
-    fileId: number, 
-    pageNumber: number, 
+    image: File,
+    fileId: number,
+    pageNumber: number,
     description?: string
   ) {
-    // Validate inputs
     if (!image || !fileId || !pageNumber) {
-      throw new Error("Image, fileId, and pageNumber are required");
+      throw new Error('Image, fileId, and pageNumber are required');
     }
 
-    // Create directory if it doesn't exist
-    try {
-      await access(UPLOAD_DIR);
-    } catch {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-    }
+    // Convert File → Buffer
+    const arrayBuffer = await image.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Process and save the image
-    const bytes = await image.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const uniqueName = `${nanoid()}-${image.name}`;
-    const filePath = join(UPLOAD_DIR, uniqueName);
-    await writeFile(filePath, buffer);
+    // Upload directly to Cloudinary
+    const result: any = await new Promise((resolve, reject) => {
+      const upload = cloudinary.uploader.upload_stream(
+        {
+          folder: 'answers',
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
 
-    // Create database record
+      Readable.from(buffer).pipe(upload);
+    });
+
+    // Save only Cloudinary URL + public_id in DB
     return prisma.answerImage.create({
       data: {
         fileId,
         pageNumber,
-        imagePath: `/uploads/answers/${uniqueName}`,
+        imagePath: result.secure_url, // <-- cloudinary URL instead of local path
         description: description || null,
       },
       include: {
-        file: {
-          select: { id: true, name: true }
-        }
-      }
+        file: { select: { id: true, name: true } },
+      },
     });
   }
 
   static async deleteAnswerImage(id: number) {
-    const answerImage = await prisma.answerImage.findUnique({
-      where: { id }
-    });
+    const answerImage = await prisma.answerImage.findUnique({ where: { id } });
 
     if (answerImage) {
-      // Delete the file from filesystem
-      const absolutePath = join(process.cwd(), "public", answerImage.imagePath);
-      await unlink(absolutePath).catch(() => {});
-      
-      // Delete from database
-      await prisma.answerImage.delete({
-        where: { id }
-      });
+      // If you stored public_id, you can also delete from Cloudinary
+      // await cloudinary.uploader.destroy(answerImage.publicId);
+
+      await prisma.answerImage.delete({ where: { id } });
     }
 
     return { success: true };
