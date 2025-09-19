@@ -52,6 +52,8 @@ export const useQuestionManagement = () => {
       const res = await fetch(`/api/admin/answer-images?fileId=${fileId}`);
       if (!res.ok) throw new Error('Failed to load answer images');
       const data = await res.json();
+      console.log(data);
+      
       setAnswerImages(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load answer images');

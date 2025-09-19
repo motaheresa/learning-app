@@ -48,10 +48,15 @@ export default function QuestionManagementPage() {
     (filterPage !== '' && question.pageNumber === filterPage)
   );
 
-  const filteredAnswerImages = answerImages.filter(image =>
+  console.log(answerImages);
+  
+  let filteredAnswerImages = answerImages.filter(image =>
     image.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (filterPage !== '' && image.pageNumber === filterPage)
   );
+  filteredAnswerImages=filteredAnswerImages.length===0?answerImages:filteredAnswerImages
+  console.log(filteredAnswerImages);
+  
 
   const handleDeleteQuestion = async (id: number) => {
     if (confirm("Are you sure you want to delete this question?")) {
