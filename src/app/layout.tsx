@@ -18,12 +18,28 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Your App Name",
-    template: "%s | Your App Name"
+    default: "Salma Academy",
+    template: "%s | Salma Academy"
   },
-  description: "Your app description here",
-  keywords: ["nextjs", "app", "education"],
-  authors: [{ name: "Your Name" }],
+  description: "Salma Academy is a cutting-edge learning platform that empowers students and educators with AI-powered tools, interactive classrooms, and personalized learning experiences. Join thousands of students achieving academic excellence",
+  keywords: [    "learning management system",
+    "online education",
+    "virtual classroom",
+    "student portal",
+    "academic platform",
+    "e-learning",
+    "education technology",
+    "digital learning",
+    "course management",
+    "student dashboard",
+    "teacher tools",
+    "academic performance",
+    "interactive learning",
+    "educational platform",
+    "school management"],
+  authors: [{ name: "Eng~Mohamed Taher Team" }],
+  creator: "Eng~Mohamed Taher",
+  publisher: "Eng~Mohamed Taher",
 };
 
 export default function RootLayout({

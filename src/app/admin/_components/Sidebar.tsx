@@ -183,7 +183,7 @@ export default function Sidebar({ onClose, isMobile = false }: SidebarProps) {
       {/* Navigation */}
       <nav className="p-4 space-y-2">
         {filteredLinks.map((link) => {
-          const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+          const isActive = pathname === link.href;
           
           return (
             <SidebarLink 

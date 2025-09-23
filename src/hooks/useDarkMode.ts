@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 
 export function useDarkMode() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -13,13 +13,11 @@ export function useDarkMode() {
     // Check if we're in a browser environment
     if (typeof window === "undefined") return;
     
-    // Check if dark mode is enabled in localStorage or system preference
+    // Check if dark mode is enabled in localStorage 
     const savedTheme = localStorage.getItem("theme");    
-    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialTheme = savedTheme === "dark" || (!savedTheme && systemPrefersDark);
+    const initialTheme = (savedTheme=="light")? false : true;
     
     setIsDark(initialTheme);
-    
     if (initialTheme) {
       document.documentElement.classList.add("dark");
     } else {
